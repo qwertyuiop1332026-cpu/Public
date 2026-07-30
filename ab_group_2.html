@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Minecraft中国版交流群《2群》</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        background: #f6f7f9;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        color: #333;
+        padding-bottom: 80px;
+    }
+    .header {
+        background: #fff;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        border-bottom: 1px solid #e5e5e5;
+    }
+    .group-avatar {
+        width: 60px; height: 60px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        overflow: hidden;
+        background: #f0f0f0;
+    }
+    .group-avatar img {
+        width: 100%; height: 100%; object-fit: cover;
+    }
+    .group-info { flex: 1; }
+    .group-name { font-size: 18px; font-weight: bold; }
+    .group-desc { font-size: 13px; color: #888; margin-top: 4px; }
+    .group-stats { font-size: 12px; color: #999; margin-top: 4px; }
+    .card {
+        background: #fff;
+        margin-top: 12px;
+        padding: 16px 20px;
+    }
+    .card-title {
+        font-size: 15px; font-weight: bold;
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 12px;
+    }
+    .card-title .more { font-size: 13px; color: #999; font-weight: normal; cursor: pointer; }
+    .member-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        justify-content: flex-start;
+    }
+    .member-item {
+        text-align: center;
+        width: 60px;
+    }
+    .member-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        margin: 0 auto 4px;
+        background: #e0e5ec;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: #fff;
+        font-size: 16px;
+        background-color: #4a90e2;
+    }
+    .member-name {
+        font-size: 12px;
+        color: #555;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .file-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .file-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 14px;
+    }
+    .file-item:last-child { border-bottom: none; }
+    .file-name {
+        color: #333;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .file-name .badge {
+        font-size: 10px;
+        background: #ff6b6b;
+        color: #fff;
+        padding: 2px 8px;
+        border-radius: 12px;
+    }
+    .file-download {
+        color: #4a90e2;
+        text-decoration: none;
+        font-size: 13px;
+        cursor: pointer;
+        font-weight: bold;
+        padding: 4px 12px;
+        border: 1px solid #4a90e2;
+        border-radius: 16px;
+        transition: 0.2s;
+    }
+    .file-download:hover {
+        background: #4a90e2;
+        color: #fff;
+    }
+    .join-tip {
+        margin-top: 10px;
+        padding: 10px 14px;
+        background: #f0f7ff;
+        border-radius: 8px;
+        font-size: 13px;
+        color: #555;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .join-tip a {
+        color: #4a90e2;
+        text-decoration: none;
+        font-weight: bold;
+    }
+    .join-tip a:hover { text-decoration: underline; }
+    .announcement-content {
+        font-size: 14px;
+        line-height: 1.8;
+        color: #555;
+    }
+    .bottom-nav {
+        position: fixed; bottom: 0; left: 0; width: 100%;
+        background: #fff;
+        display: flex; justify-content: space-around;
+        padding: 10px 0;
+        border-top: 1px solid #e5e5e5;
+        font-size: 10px; color: #888;
+        z-index: 99;
+    }
+    .bottom-nav .active { color: #4a90e2; }
+    .nav-icon { font-size: 20px; display: block; margin-bottom: 2px; }
+
+    .group-selector {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        padding: 12px 0 8px 0;
+        background: #fff;
+        border-bottom: 1px solid #e5e5e5;
+    }
+    .group-selector a {
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 16px;
+        padding: 5px 20px;
+        border-radius: 20px;
+        color: #333;
+        background: #f0f0f0;
+        transition: 0.2s;
+    }
+    .group-selector a.active {
+        color: #fff;
+        background: #4a90e2;
+        pointer-events: none;
+    }
+    .group-selector a:active {
+        transform: scale(0.95);
+    }
+</style>
+</head>
+<body>
+
+    <div class="group-selector">
+        <a href="ab_group.html">一群</a>
+        <a href="ab_group_2.html" class="active">二群</a>
+    </div>
+
+    <div class="header">
+        <div class="group-avatar">
+            <img src="666.png" alt="群头像">
+        </div>
+        <div class="group-info">
+            <div class="group-name">黯Minecraft中国版交流群《2群》</div>
+            <div class="group-desc">群号：1062424576</div>
+            <div class="group-stats">群成员 26人 · 仅可通过群号搜索</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">
+            群公告
+            <span class="more">查看全部 ></span>
+        </div>
+        <div class="announcement-content">
+            <p>📌 @全体成员 你们要是下载文件显示无法打开，点击右上角的“...”然后使用mt管理器打开。</p>
+            <p>📌 使用方法：下载后用 MT 管理器找到文件并安装。</p>
+            <p>📌 抵制不良病毒，抵制黄赌毒，共建完美群聊。</p>
+            <p>📌 群主和管理员都可以，但是更建议找群主解决。</p>
+            <p>📌 本群禁广禁黄禁病毒，发现及时举报有奖。</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">
+            群成员（共26人）
+            <span class="more">查看全部 ></span>
+        </div>
+        <div class="member-grid">
+            <div class="member-item"><div class="member-avatar" style="background: #4a90e2;">黯</div><div class="member-name">黯机中号</div></div>
+            <div class="member-item"><div class="member-avatar" style="background: #e74c3c;">h</div><div class="member-name">h</div></div>
+            <div class="member-item"><div class="member-avatar" style="background: #8e44ad;">Q</div><div class="member-name">Q群管家</div></div>
+            <div class="member-item"><div class="member-avatar" style="background: #2ecc71;">R</div><div class="member-name">Roblox...</div></div>
+            <div class="member-item"><div class="member-avatar" style="background: #f39c12;">小</div><div class="member-name">小白</div></div>
+            <div class="member-item"><div class="member-avatar" style="background: #d35400;">5</div><div class="member-name">5</div></div>
+            <div class="member-item"><div class="member-avatar" style="background: #c0392b;">..</div><div class="member-name">..</div></div>
+            <div class="member-item"><div class="member-avatar" style="background: #2980b9;">懒</div><div class="member-name">懒得起</div></div>
+            <div class="member-item"><div class="member-avatar" style="background: #27ae60;">景</div><div class="member-name">景</div></div>
+            <div class="member-item"><div class="member-avatar" style="background: #9b59b6;">人</div><div class="member-name">人锤</div></div>
+            <div class="member-item"><div class="member-avatar" style="background: #f1c40f;">0</div><div class="member-name">0</div></div>
+            <div class="member-item"><div class="member-avatar" style="background: #7f8c8d;">岚</div><div class="member-name">岚</div></div>
+            <div class="member-item"><div class="member-avatar" style="background: #e67e22;">陈</div><div class="member-name">陈峰</div></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">
+            群文件
+            <span class="more">共11项</span>
+        </div>
+        <ul class="file-list">
+            <li class="file-item">
+                <span class="file-name">
+                    📁 破解文件
+                    <span class="badge">最新</span>
+                </span>
+                <span class="file-download" id="downloadBtn2">直接下载</span>
+            </li>
+        </ul>
+        <div class="join-tip">
+            <span>🔒 更多资源请 <a href="https://qun.qq.com/universal-share/share?ac=1&authKey=r0pFBHzYHjGhWOtH8Lr1qTjDCNDZr%2BE8eYUsnueKOu7J1SBbHmVzawt8Ge95dAv3&busi_data=eyJncm91cENvZGUiOiIxMDYyNDI0NTc2IiwidG9rZW4iOiJobGlrNjFxREk3L2RrWENwYVNpamJJNDNoK0V3M2xEZkt6YXZ3T3lybU1TMlB5V1JxU2lsUXExRUt1SDdHT3VPIiwidWluIjoiMzg4MTgwNjY2OCJ9&data=IsHqhc7SmmjIZwXLeCfGWamZwCMJVYj5QINjHASu5gGWnc6QGbp9mI8zkarmvscgu7X8fS4GhMI-7AZrLtinBQ&svctype=4&tempid=h5_group_info" target="_blank">加入QQ群</a> 获取</span>
+            <span style="font-size:12px; color:#999;">群号：1062424576</span>
+        </div>
+    </div>
+
+    <a id="directDownload2" href="破解文件.zip" download style="display:none;"></a>
+
+    <div class="bottom-nav">
+        <div><span class="nav-icon">💬</span>聊天</div>
+        <div class="active"><span class="nav-icon">📂</span>文件</div>
+        <div><span class="nav-icon">🖼️</span>相册</div>
+        <div><span class="nav-icon">⭐</span>精华</div>
+        <div><span class="nav-icon">🎁</span>福利社</div>
+    </div>
+
+    <script>
+        document.getElementById('downloadBtn2').addEventListener('click', function() {
+            document.getElementById('directDownload2').click();
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>贪吃蛇</title>
+<style>
+body{text-align:center;font-family:sans-serif;background:#16213e;color:white;padding:10px;touch-action:manipulation;}
+canvas{background:#0f3460;border:2px solid #e94560;display:block;margin:10px auto;width:100%;max-width:400px;height:auto;aspect-ratio:1/1;}
+#score{font-size:24px;color:#f5c842;}
+.controls{display:grid;grid-template-columns:repeat(3, 60px);gap:10px;justify-content:center;margin-top:10px;}
+.controls button{height:60px;font-size:24px;background:#4a4a5a;color:white;border:none;border-radius:8px;cursor:pointer;}
+</style>
+</head>
+<body>
+<h1>🐍 贪吃蛇</h1>
+<div>分数：<span id="score">0</span></div>
+<canvas id="gameCanvas" width="400" height="400"></canvas>
+<div class="controls">
+    <div></div><button onclick="changeDirection('up')">↑</button><div></div>
+    <button onclick="changeDirection('left')">←</button>
+    <button onclick="changeDirection('down')">↓</button>
+    <button onclick="changeDirection('right')">→</button>
+</div>
+<button onclick="resetSnake()" style="margin-top:10px;padding:10px 20px;background:#e94560;color:white;border:none;border-radius:8px;">重新开始</button>
+<script>
+const canvas=document.getElementById('gameCanvas'), ctx=canvas.getContext('2d');
+let snake=[{x:200,y:200}], direction='right', food={x:100,y:100}, score=0, gameOver=false;
+
+function randomFood(){food.x=Math.floor(Math.random()*20)*20; food.y=Math.floor(Math.random()*20)*20;}
+
+function draw(){
+ ctx.clearRect(0,0,400,400);
+ ctx.fillStyle='#4CAF50'; snake.forEach(s=>{ctx.fillRect(s.x,s.y,18,18);});
+ ctx.fillStyle='#ff6b6b'; ctx.fillRect(food.x,food.y,18,18);
+ if(gameOver){ctx.fillStyle='white'; ctx.font='30px Arial'; ctx.fillText('游戏结束',120,200);}
+}
+
+function update(){
+ if(gameOver) return;
+ let head={...snake[0]};
+ switch(direction){case'right':head.x+=20;break;case'left':head.x-=20;break;case'up':head.y-=20;break;case'down':head.y+=20;break;}
+ if(head.x<0||head.x>=400||head.y<0||head.y>=400){gameOver=true; return;}
+ for(let s of snake){if(head.x===s.x&&head.y===s.y){gameOver=true; return;}}
+ snake.unshift(head);
+ if(head.x===food.x&&head.y===food.y){score+=10;document.getElementById('score').textContent=score;randomFood();}else{snake.pop();}
+}
+
+function changeDirection(newDir){
+ if((direction==='right'&&newDir==='left')||(direction==='left'&&newDir==='right')||(direction==='up'&&newDir==='down')||(direction==='down'&&newDir==='up')) return;
+ direction=newDir;
+}
+
+function resetSnake(){snake=[{x:200,y:200}]; direction='right'; score=0; gameOver=false; document.getElementById('score').textContent='0'; randomFood();}
+document.addEventListener('keydown',(e)=>{if(e.key==='ArrowUp')changeDirection('up');if(e.key==='ArrowDown')changeDirection('down');if(e.key==='ArrowLeft')changeDirection('left');if(e.key==='ArrowRight')changeDirection('right');});
+randomFood(); setInterval(()=>{update();draw();},150);
+</script>
+</body>
+</html>

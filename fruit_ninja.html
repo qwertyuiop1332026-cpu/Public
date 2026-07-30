@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>未命名(不会取名)🤓</title>
+<style>
+    * { margin: 0; padding: 0; }
+    body {
+        margin: 0; overflow: hidden; background: #1a1a2e;
+        touch-action: none; font-family: sans-serif; user-select: none;
+    }
+    canvas {
+        display: block; width: 100vw; height: 100vh; background: #1a1a2e;
+    }
+    #ui {
+        position: absolute; top: 20px; left: 0; width: 100%;
+        text-align: center; color: #fff; pointer-events: none;
+        font-size: 24px; font-weight: bold; text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    }
+    #ui span { color: #f5c842; }
+    #gameover {
+        display: none; position: absolute; top: 50%; left: 50%;
+        transform: translate(-50%, -50%); background: rgba(0,0,0,0.85);
+        padding: 30px 40px; border-radius: 20px; border: 2px solid #e94560;
+        text-align: center; color: #fff; z-index: 10;
+    }
+    #gameover button {
+        margin-top: 15px; padding: 10px 25px; background: #4CAF50;
+        border: none; border-radius: 10px; color: #fff; font-size: 18px; font-weight: bold; cursor: pointer;
+    }
+</style>
+</head>
+<body>
+
+<div id="ui">🍉 <span id="score">0</span></div>
+
+<div id="gameover">
+    <h2 style="color:#e94560;">💥 切到炸弹了！</h2>
+    <p>得分: <span id="finalScore">0</span></p>
+    <button onclick="initGame()">再来一刀</button>
+</div>
+
+<canvas id="c"></canvas>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const scoreEl = document.getElementById('score');
+const finalScoreEl = document.getElementById('finalScore');
+const gameoverEl = document.getElementById('gameover');
+
+let W, H;
+function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+}
+resize(); window.addEventListener('resize', resize);
+
+const FRUITS = ['🍎', '🍊', '🍋', '🍇', '🍉', '🍓', '🍑'];
+let items = [];
+let score = 0;
+let gameRunning = true;
+let spawnTimer = 0;
+
+class Item {
+    constructor() {
+        this.type = Math.random() < 0.15 ? 'bomb' : 'fruit';
+        this.icon = this.type === 'bomb' ? '💣' : FRUITS[Math.floor(Math.random() * FRUITS.length)];
+        
+        this.x = (Math.random() < 0.5) ? -40 : W + 40;
+        this.y = H + 20 + Math.random() * 30;
+        this.radius = this.type === 'bomb' ? 25 : 30;
+        
+        let targetX = W * 0.2 + Math.random() * W * 0.6;
+        let targetY = -40 - Math.random() * 80;
+        let dx = targetX - this.x;
+        let dy = targetY - this.y;
+        let dist = Math.hypot(dx, dy);
+        let power = 16 + Math.random() * 4;
+        
+        this.vx = (dx / dist) * power;
+        this.vy = (dy / dist) * power;
+        this.gravity = 0.4;
+        this.alive = true;
+        this.rotated = 0;
+    }
+    update() {
+        this.vy += this.gravity;
+        this.x += this.vx;
+        this.y += this.vy;
+        this.rotated += this.vx * 2;
+        if (this.y > H + 100) this.alive = false;
+    }
+    draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotated * 0.02);
+        ctx.font = this.radius * 2 + 'px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(this.icon, 0, 0);
+        ctx.restore();
+    }
+}
+
+function spawnItem() {
+    let count = 2 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < count; i++) {
+        items.push(new Item());
+    }
+}
+
+function handleSlice(x, y) {
+    if (!gameRunning) return;
+    for (let i = items.length - 1; i >= 0; i--) {
+        let item = items[i];
+        let dist = Math.hypot(x - item.x, y - item.y);
+        if (dist < item.radius + 20) { // 加大了点击判定圈，一点就碎
+            if (item.type === 'bomb') {
+                gameOver();
+                return;
+            } else {
+                items.splice(i, 1);
+                score++;
+                scoreEl.textContent = score;
+            }
+        }
+    }
+}
+
+function gameOver() {
+    gameRunning = false;
+    finalScoreEl.textContent = score;
+    gameoverEl.style.display = 'block';
+}
+
+function update() {
+    if (!gameRunning) return;
+    spawnTimer++;
+    if (spawnTimer > 12) {
+        spawnItem();
+        spawnTimer = 0;
+    }
+    for (let i = items.length - 1; i >= 0; i--) {
+        items[i].update();
+        if (!items[i].alive) items.splice(i, 1);
+    }
+}
+
+function draw() {
+    ctx.clearRect(0, 0, W, H);
+    items.forEach(item => item.draw());
+}
+
+// 核心修改：变成纯“点击爆炸”模式
+canvas.addEventListener('touchstart', e => {
+    let t = e.touches[0];
+    handleSlice(t.clientX, t.clientY);
+});
+canvas.addEventListener('touchmove', e => {
+    e.preventDefault();
+    let t = e.touches[0];
+    handleSlice(t.clientX, t.clientY);
+}, { passive: false });
+
+canvas.addEventListener('click', e => {
+    handleSlice(e.clientX, e.clientY);
+});
+
+function initGame() {
+    items = []; score = 0; gameRunning = true;
+    scoreEl.textContent = '0'; gameoverEl.style.display = 'none';
+}
+
+initGame();
+function loop() { update(); draw(); requestAnimationFrame(loop); }
+loop();
+</script>
+</body>
+</html>

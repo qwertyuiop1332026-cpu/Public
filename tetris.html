@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>单色俄罗斯方块</title>
+<style>
+    body {
+        margin: 0; background: #0f0f1a;
+        display: flex; justify-content: center; align-items: center;
+        height: 100vh; font-family: sans-serif; touch-action: manipulation;
+        overflow: hidden;
+    }
+    #game-wrapper {
+        background: #1a1a2e; border-radius: 16px; padding: 15px 15px 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.9);
+        text-align: center;
+        width: 320px; max-width: 100%;
+    }
+    canvas {
+        width: 300px; height: 600px;
+        background: #141428; border-radius: 8px; border: 2px solid #333366;
+        display: block; margin: 0 auto;
+    }
+    #ui {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: #f5c842;
+        margin-top: 8px; margin-bottom: 8px;
+        font-size: 15px;
+        font-weight: bold;
+        padding: 0 5px;
+    }
+    #ui .score-area { flex: 1; text-align: left; }
+    #ui .lines-area { flex: 1; text-align: right; }
+    
+    #restart-btn {
+        background: #e94560; color: white; border: none;
+        border-radius: 12px; padding: 6px 12px;
+        font-size: 13px; font-weight: bold; cursor: pointer;
+        box-shadow: 0 3px 0 #a03245; transition: 0.1s;
+        margin: 0 5px;
+    }
+    #restart-btn:active { transform: translateY(3px); box-shadow: none; }
+    
+    #controls {
+        display: grid; grid-template-columns: repeat(4, 1fr);
+        gap: 8px; margin-top: 5px;
+    }
+    #controls button {
+        background: #2a2a5e; color: #fff; border: none; border-radius: 12px;
+        padding: 14px 0; font-size: 22px; touch-action: manipulation;
+        box-shadow: 0 4px 0 #111140; transition: 0.1s; cursor: pointer;
+    }
+    #controls button:active { transform: translateY(3px); box-shadow: none; }
+</style>
+</head>
+<body>
+
+<div id="game-wrapper">
+    <canvas id="c" width="300" height="600"></canvas>
+    
+    <div id="ui">
+        <div class="score-area">🏆 <span id="score">0</span></div>
+        <button id="restart-btn" onclick="initGame()">🔄 重开</button>
+        <div class="lines-area">🧱 <span id="lines">0</span></div>
+    </div>
+
+    <div id="controls">
+        <button id="btnLeft">◀</button>
+        <button id="btnDown">▼</button>
+        <button id="btnRight">▶</button>
+        <button id="btnRotate">↻</button>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const scoreEl = document.getElementById('score');
+const linesEl = document.getElementById('lines');
+
+const COLS = 10, ROWS = 20;
+const BLOCK = 30;
+let score = 0, lines = 0, gameOver = false;
+let board = [], currentPiece = null;
+let fallInterval = null;
+
+const UNIFIED_COLOR = '#4a90e2';
+
+const PIECES = [
+    { shape: [[1,1,1,1]] },
+    { shape: [[1,1],[1,1]] },
+    { shape: [[0,1,0],[1,1,1]] },
+    { shape: [[0,1,1],[1,1,0]] },
+    { shape: [[1,1,0],[0,1,1]] },
+    { shape: [[1,0,0],[1,1,1]] },
+    { shape: [[0,0,1],[1,1,1]] }
+];
+
+function initGame() {
+    board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+    score = 0; lines = 0; gameOver = false;
+    scoreEl.textContent = '0'; linesEl.textContent = '0';
+    if (fallInterval) clearInterval(fallInterval);
+    spawnPiece();
+    fallInterval = setInterval(() => { if (!gameOver) moveDown(); }, 450);
+    draw();
+}
+
+function spawnPiece() {
+    const idx = Math.floor(Math.random() * PIECES.length);
+    const p = PIECES[idx];
+    currentPiece = {
+        shape: p.shape.map(row => [...row]),
+        color: UNIFIED_COLOR,
+        x: Math.floor((COLS - p.shape[0].length) / 2),
+        y: 0
+    };
+    if (collision(currentPiece.shape, currentPiece.x, currentPiece.y)) {
+        gameOver = true; clearInterval(fallInterval);
+        setTimeout(() => alert("堆到顶了！得分：" + score), 100);
+    }
+}
+
+function collision(shape, offX, offY) {
+    for (let r = 0; r < shape.length; r++) {
+        for (let c = 0; c < shape[0].length; c++) {
+            if (shape[r][c] !== 0) {
+                let bx = offX + c, by = offY + r;
+                if (bx < 0 || bx >= COLS || by >= ROWS || by < 0) return true;
+                if (by >= 0 && board[by][bx] !== 0) return true;
+            }
+        }
+    }
+    return false;
+}
+
+function merge() {
+    for (let r = 0; r < currentPiece.shape.length; r++) {
+        for (let c = 0; c < currentPiece.shape[0].length; c++) {
+            if (currentPiece.shape[r][c] !== 0) {
+                let by = currentPiece.y + r, bx = currentPiece.x + c;
+                if (by >= 0 && by < ROWS && bx >= 0 && bx < COLS) {
+                    board[by][bx] = UNIFIED_COLOR;
+                }
+            }
+        }
+    }
+}
+
+function clearLines() {
+    let cleared = 0;
+    for (let r = ROWS - 1; r >= 0; ) {
+        let isFull = true;
+        for (let c = 0; c < COLS; c++) {
+            if (board[r][c] === 0) {
+                isFull = false;
+                break;
+            }
+        }
+        if (isFull) {
+            board.splice(r, 1);
+            board.unshift(new Array(COLS).fill(0));
+            cleared++;
+        } else {
+            r--;
+        }
+    }
+
+    if (cleared > 0) {
+        lines += cleared;
+        linesEl.textContent = lines;
+        const points = [0, 100, 300, 500, 800];
+        score += points[cleared];
+        scoreEl.textContent = score;
+    }
+}
+
+function moveDown() {
+    if (gameOver || !currentPiece) return;
+    if (!collision(currentPiece.shape, currentPiece.x, currentPiece.y + 1)) {
+        currentPiece.y++;
+    } else {
+        merge();
+        clearLines();
+        spawnPiece();
+    }
+    draw();
+}
+
+function hardDrop() {
+    if (gameOver || !currentPiece) return;
+    while (!collision(currentPiece.shape, currentPiece.x, currentPiece.y + 1)) currentPiece.y++;
+    moveDown();
+}
+
+function rotatePiece() {
+    if (gameOver || !currentPiece) return;
+    const rotated = currentPiece.shape[0].map((_, idx) => currentPiece.shape.map(row => row[idx]).reverse());
+    if (!collision(rotated, currentPiece.x, currentPiece.y)) {
+        currentPiece.shape = rotated;
+    }
+    draw();
+}
+
+function moveLeft() { if (!gameOver && !collision(currentPiece.shape, currentPiece.x - 1, currentPiece.y)) { currentPiece.x--; draw(); } }
+function moveRight() { if (!gameOver && !collision(currentPiece.shape, currentPiece.x + 1, currentPiece.y)) { currentPiece.x++; draw(); } }
+
+function draw() {
+    ctx.clearRect(0, 0, 300, 600);
+    ctx.strokeStyle = '#141428';
+    ctx.lineWidth = 2;
+
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            if (board[r][c] !== 0) {
+                ctx.fillStyle = UNIFIED_COLOR;
+                ctx.fillRect(c * BLOCK, r * BLOCK, BLOCK, BLOCK);
+                ctx.strokeRect(c * BLOCK, r * BLOCK, BLOCK, BLOCK);
+                ctx.fillStyle = 'rgba(255,255,255,0.15)';
+                ctx.fillRect(c * BLOCK + 3, r * BLOCK + 3, BLOCK * 0.3, BLOCK * 0.3);
+            }
+        }
+    }
+
+    if (currentPiece && !gameOver) {
+        for (let r = 0; r < currentPiece.shape.length; r++) {
+            for (let c = 0; c < currentPiece.shape[0].length; c++) {
+                if (currentPiece.shape[r][c] !== 0) {
+                    let x = (currentPiece.x + c) * BLOCK, y = (currentPiece.y + r) * BLOCK;
+                    ctx.fillStyle = UNIFIED_COLOR;
+                    ctx.fillRect(x, y, BLOCK, BLOCK);
+                    ctx.strokeRect(x, y, BLOCK, BLOCK);
+                    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                    ctx.fillRect(x + 3, y + 3, BLOCK * 0.3, BLOCK * 0.3);
+                }
+            }
+        }
+    }
+}
+
+document.getElementById('btnLeft').addEventListener('click', moveLeft);
+document.getElementById('btnRight').addEventListener('click', moveRight);
+document.getElementById('btnDown').addEventListener('click', hardDrop);
+document.getElementById('btnRotate').addEventListener('click', rotatePiece);
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') moveLeft();
+    if (e.key === 'ArrowRight') moveRight();
+    if (e.key === 'ArrowUp') rotatePiece();
+    if (e.key === 'ArrowDown') hardDrop();
+});
+
+initGame();
+</script>
+</body><p style="position: absolute; bottom: 2%; width: 100%; text-align: center; color: rgba(255,255,255,2); font-size: 14px; z-index: 99; pointer-events: none;">电脑版做的不太行，因为不会电脑，请理解</p>
+</html>

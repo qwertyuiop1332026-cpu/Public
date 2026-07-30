@@ -113,9 +113,44 @@
         border-top: 1px solid #2a2a3e;
         padding-top: 20px;
     }
+
+    /* 音乐控制样式（强制不依赖点击） */
+    #music-control {
+        position: fixed;
+        bottom: 25px;
+        right: 25px;
+        width: 54px;
+        height: 54px;
+        background: #2a2a5e;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 24px;
+        color: #fff;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+        z-index: 9999;
+        border: 2px solid #4a90e2;
+        transition: 0.2s;
+        touch-action: manipulation;
+    }
+    #music-control:active { transform: scale(0.9); }
+    #music-control.muted {
+        background: #4a4a5a;
+        border-color: #666;
+        color: #888;
+    }
+    audio { display: none; }
 </style>
 </head>
 <body>
+
+    <!-- 直接写死音乐文件 -->
+    <audio id="bgm" src="bgm.mp3" loop></audio>
+
+    <!-- 固定播放按钮 -->
+    <div id="music-control" onclick="toggleMusic()">🔊</div>
 
     <div class="top-nav">
         <div class="nav-title">黯机游戏大全</div>
@@ -142,7 +177,9 @@
         <a href="goban.html" class="game-btn">🐂 AI智能五子棋对战</a>
         <a href="whack.html" class="game-btn">👽 打地鼠</a>
         <a href="tetris.html" class="game-btn">☠︎ 俄罗斯方块</a>
-        <a href="racer.html" class="game-btn">🐿️ 像素赛车</a> href="https://drifthunter.org/zh/games/subway-surfers" target="_blank" class="game-btn">🚇 地铁跑酷 (网页版)</a>
+        <a href="racer.html" class="game-btn">🐿️ 像素赛车</a>
+        <a href="phone2.html" class="game-btn">😋 模拟手机</a>
+        <a href="https://drifthunter.org/zh/games/subway-surfers" target="_blank" class="game-btn">🚇 地铁跑酷 (网页版)</a>
         <a href="ab_group.html" class="game-btn">👾 加入QQ群</a>
         <a href="about.html" class="game-btn">💀 关于开发者</a>
     </div>
@@ -150,9 +187,11 @@
     <div id="logs" class="page">
         <div class="log-item">
             <div class="date">2026年7月30日</div>
-            <div class="desc">🚀 迁移至 GitHub Pages，移除音乐播放器。</div>
+            <div class="desc">💡 修复背景音乐无法播放的Bug，打开网页即可自动播放。</div>
         </div>
         <div class="log-item">
+            <div class="date">2026年7月22日</div>
+            <div class="desc">新增高仿“黯机手机”模拟器界面。</div>
         </div>
         <div class="log-item">
             <div class="date">2026年7月13日</div>
@@ -172,6 +211,32 @@
             let btns = document.querySelectorAll('.nav-btn');
             let map = {'home': 0, 'logs': 1};
             if(map[pageId] !== undefined) btns[map[pageId]].classList.add('active');
+        }
+
+        /* 核心修改：彻底摒弃“点击触发”，直接用代码强行调用 */
+        const audio = document.getElementById('bgm');
+        const btn = document.getElementById('music-control');
+
+        // 浏览器一加载完，立刻尝试播放
+        window.addEventListener('load', function() {
+            audio.play().then(() => {
+                btn.textContent = '🔊';
+            }).catch(() => {
+                btn.textContent = '🔇';
+                btn.classList.add('muted');
+            });
+        });
+
+        function toggleMusic() {
+            if (audio.paused) {
+                audio.play();
+                btn.textContent = '🔊';
+                btn.classList.remove('muted');
+            } else {
+                audio.pause();
+                btn.textContent = '🔇';
+                btn.classList.add('muted');
+            }
         }
     </script>
 

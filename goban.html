@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>五子棋 - 智能对战</title>
+<style>
+body{margin:0;background:#2d2d3d;display:flex;justify-content:center;align-items:center;height:100vh;touch-action:manipulation;font-family:sans-serif;flex-direction:column;}
+canvas{background:#e8c99b;border-radius:12px;box-shadow:0 10px 20px rgba(0,0,0,0.5);width:95%;max-width:450px;aspect-ratio:1/1;}
+
+#status{
+    margin: 12px 0 8px 0; padding: 8px 25px; background: #1a1a2e; color: #f5c842;
+    border-radius: 30px; font-size: 16px; font-weight: bold; border: 1px solid #4a4a5a;
+    transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+#status.ai-turn{ color: #e94560; border-color: #e94560; box-shadow: 0 0 15px rgba(233, 69, 96, 0.3); }
+
+#btn-reset{
+    background: #4CAF50; color: white; border: none; padding: 10px 30px;
+    border-radius: 30px; font-size: 16px; font-weight: bold; cursor: pointer;
+    box-shadow: 0 4px 0 #2e7d32; transition: 0.1s; margin-top: 5px;
+}
+#btn-reset:active{ transform: translateY(4px); box-shadow: none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="status">⚫ 你的回合 (黑棋)</div>
+<button id="btn-reset" onclick="initGame()">🔄 重新开局</button>
+
+<script>
+const c=document.getElementById('c'), ctx=c.getContext('2d');
+const statusEl = document.getElementById('status');
+let s=15, b, go=false, moveCount=0, isThinking=false;
+let size=Math.min(window.innerWidth-20, window.innerHeight-100, 450);
+c.width=size; c.height=size; 
+let block=size/(s+1), mar=block;
+
+function initGame(){
+    b=[]; for(let i=0;i<s;i++)b.push(new Array(s).fill(0));
+    go=false; moveCount=0; isThinking=false;
+    statusEl.innerText = '⚫ 你的回合 (黑棋)'; statusEl.className = '';
+    drawBoard();
+}
+
+function drawBoard(){
+    ctx.clearRect(0,0,size,size);
+    ctx.strokeStyle='#5d4037'; ctx.lineWidth=1.5;
+    for(let i=1;i<=s;i++){
+        ctx.beginPath(); ctx.moveTo(mar,i*block); ctx.lineTo(mar+(s-1)*block,i*block); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(i*block,mar); ctx.lineTo(i*block,mar+(s-1)*block); ctx.stroke();
+    }
+    for(let r=0;r<s;r++)for(let c=0;c<s;c++){
+        if(b[r][c]!=0){
+            ctx.beginPath(); ctx.arc(mar+c*block, mar+r*block, block*0.42, 0, 2*Math.PI);
+            ctx.fillStyle = b[r][c]==1 ? '#000' : '#fff';
+            ctx.fill();
+        }
+    }
+    if(go){
+        ctx.fillStyle='#e94560'; ctx.font='bold 30px sans-serif'; ctx.textAlign='center';
+        ctx.fillText(go==1?'🎉 你赢了!':'💻 电脑赢了', size/2, 50);
+    }
+}
+
+function checkWin(r,c,p){
+    const d=[[1,0],[0,1],[1,1],[1,-1]];
+    for(let dir of d){
+        let cnt=1;
+        for(let i=1;i<5;i++){ let nr=r+dir[0]*i, nc=c+dir[1]*i; if(nr<0||nr>=s||nc<0||nc>=s||b[nr][nc]!=p)break; cnt++; }
+        for(let i=1;i<5;i++){ let nr=r-dir[0]*i, nc=c-dir[1]*i; if(nr<0||nr>=s||nc<0||nc>=s||b[nr][nc]!=p)break; cnt++; }
+        if(cnt>=5)return true;
+    }
+    return false;
+}
+
+function evaluatePoint(row, col, player) {
+    let totalScore = 0; const dirs = [[1,0],[0,1],[1,1],[1,-1]];
+    for(let d of dirs) {
+        let count = 1, block = 0;
+        for(let i=1;i<5;i++){ let r=row+d[0]*i, c=col+d[1]*i; if(r<0||r>=s||c<0||c>=s){block++; break;} if(b[r][c]===player) count++; else if(b[r][c]===0) break; else {block++; break;} }
+        for(let i=1;i<5;i++){ let r=row-d[0]*i, c=col-d[1]*i; if(r<0||r>=s||c<0||c>=s){block++; break;} if(b[r][c]===player) count++; else if(b[r][c]===0) break; else {block++; break;} }
+        if(count>=5) totalScore += 10000;
+        else if(block===0) { if(count===4) totalScore += 1000; else if(count===3) totalScore += 100; else if(count===2) totalScore += 10; }
+        else if(block===1) { if(count===3) totalScore += 50; else if(count===2) totalScore += 5; }
+    }
+    return totalScore;
+}
+
+function AI(){
+    let bestScore = -1, pos = {r: 7, c: 7};
+    for(let r=0; r<s; r++) for(let c=0; c<s; c++){
+        if(b[r][c] !== 0) continue;
+        let total = evaluatePoint(r, c, 2) + evaluatePoint(r, c, 1) * 0.9;
+        total += Math.random() * 0.1;
+        if(total > bestScore) { bestScore = total; pos = {r, c}; }
+    }
+    return pos;
+}
+
+function handleMove(e){
+    if(go || isThinking) return;
+    let rect=c.getBoundingClientRect();
+    let x=(e.clientX||e.touches[0].clientX)-rect.left;
+    let y=(e.clientY||e.touches[0].clientY)-rect.top;
+    let col=Math.round((x-mar)/block), row=Math.round((y-mar)/block);
+    if(col<0||col>=s||row<0||row>=s||b[row][col]!=0)return;
+
+    b[row][col]=1; moveCount++;
+    if(checkWin(row,col,1)){ go=1; drawBoard(); statusEl.innerText='🎉 你赢了！'; return; }
+    if(moveCount>=s*s){ go=3; drawBoard(); statusEl.innerText='🤝 平局！'; return; }
+
+    isThinking = true; statusEl.innerText = '🤖 电脑思考中 (白棋)...'; statusEl.className = 'ai-turn'; drawBoard();
+    setTimeout(() => {
+        let aiMove = AI(); b[aiMove.r][aiMove.c] = 2;
+        if(checkWin(aiMove.r, aiMove.c, 2)){ go=2; drawBoard(); statusEl.innerText='💻 电脑赢了！'; isThinking=false; return; }
+        isThinking = false; statusEl.innerText = '⚫ 你的回合 (黑棋)'; statusEl.className = ''; drawBoard();
+    }, 800);
+}
+
+c.addEventListener('click', handleMove);
+c.addEventListener('touchstart', handleMove);
+initGame();
+</script>
+</body>
+</html>

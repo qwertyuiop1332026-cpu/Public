@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>桌球双人对战</title>
+<style>
+    body {
+        margin: 0; background: #0d0d1a;
+        display: flex; justify-content: center; align-items: center;
+        height: 100vh; font-family: sans-serif; touch-action: none;
+        overflow: hidden; flex-direction: column;
+        user-select: none;
+    }
+    #game-container {
+        background: #1a2a1a; border-radius: 20px; padding: 10px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.9);
+        position: relative;
+        width: 100%; max-width: 440px;
+    }
+    canvas {
+        display: block; width: 100%;
+        aspect-ratio: 800 / 400;
+        background: #2a3a2a; border-radius: 12px; border: 6px solid #5a3a2a;
+        box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+    }
+    #ui {
+        display: flex; justify-content: space-between; align-items: center;
+        color: #f5c842; margin-top: 10px; font-size: 13px; font-weight: bold;
+        padding: 0 5px;
+    }
+    #controls {
+        display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; justify-content: center;
+    }
+    #controls button {
+        background: #2a2a5e; color: #fff; border: none; border-radius: 12px;
+        padding: 8px 12px; font-size: 13px; cursor: pointer;
+        box-shadow: 0 3px 0 #111140; transition: 0.1s; touch-action: manipulation;
+    }
+    #controls button:active { transform: translateY(3px); box-shadow: none; }
+    #controls button.active { background: #4CAF50; box-shadow: 0 3px 0 #2e7d32; }
+    #power-bar {
+        width: 100%; height: 6px; background: #333; border-radius: 4px;
+        margin-top: 6px; overflow: hidden; display: none;
+    }
+    #power-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #4CAF50, #f5c842, #e94560); transition: width 0.05s; }
+    #status { font-size: 13px; color: #aaa; text-align: center; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="c" width="800" height="400"></canvas>
+    <div id="ui">
+        <div>⚪ <span id="player1">你</span></div>
+        <div id="turnDisplay">🎯 轮到你</div>
+        <div>🤖 <span id="player2">电脑</span></div>
+    </div>
+    <div id="power-bar"><div id="power-fill"></div></div>
+    <div id="status">👆 按住白球拖拽瞄准，松手击球</div>
+    <div id="controls">
+        <button id="btnPvP" class="active">👥 双人</button>
+        <button id="btnPvE">🤖 人机</button>
+        <button id="btnReset">🔄 重摆</button>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = 800, H = 400;
+c.width = W; c.height = H;
+
+const player1El = document.getElementById('player1');
+const player2El = document.getElementById('player2');
+const turnDisplay = document.getElementById('turnDisplay');
+const statusEl = document.getElementById('status');
+const powerBar = document.getElementById('power-bar');
+const powerFill = document.getElementById('power-fill');
+
+const FRICTION = 0.985;
+const MIN_SPEED = 0.2;
+const POCKET_R = 18;
+const BALL_R = 12;
+const CUSHION = 6;
+
+let balls = [];
+let cueBall = null;
+let pockets = [];
+let currentPlayer = 1;
+let isPvP = true;
+let isAiming = false;
+let dragStart = null;
+let power = 0;
+let isAnimating = false;
+let gameOver = false;
+let pottedOrder = [];
+
+function initPockets() {
+    pockets = [
+        {x: 20, y: 20}, {x: W/2, y: 12}, {x: W-20, y: 20},
+        {x: 20, y: H-20}, {x: W/2, y: H-12}, {x: W-20, y: H-20}
+    ];
+}
+
+function initBalls() {
+    balls = [];
+    const startX = W - 140, startY = H/2;
+    const gap = BALL_R * 2 + 2;
+    
+    const colors = [
+        '#f5c842','#e94560','#4a90e2','#e67e22','#4CAF50','#9b59b6','#e74c3c',
+        '#f39c12','#1abc9c','#3498db','#d35400','#2ecc71','#8e44ad','#c0392b'
+    ];
+    
+    // 【核心修改】强制重新定义白球为一个永不消失的对象
+    cueBall = {x: 120, y: H/2, vx: 0, vy: 0, r: BALL_R, isCue: true, number: 0};
+    balls.push(cueBall);
+    
+    let rows = 5; let ballIndex = 0;
+    for (let row = 0; row < rows; row++) {
+        for (let col = 0; col <= row; col++) {
+            let x = startX + (row * gap * 0.866);
+            let y = startY - (row * gap * 0.5) + (col * gap);
+            if (ballIndex === 7) {
+                x = startX + (3 * gap * 0.866); y = startY;
+            }
+            let color = colors[ballIndex % colors.length];
+            balls.push({x, y, vx: 0, vy: 0, r: BALL_R, color, number: ballIndex + 1, alive: true});
+            ballIndex++;
+        }
+    }
+    pottedOrder = []; gameOver = false;
+}
+
+function resetGame() {
+    initBalls(); currentPlayer = 1; isAnimating = false; power = 0;
+    powerBar.style.display = 'none'; updateUI();
+}
+
+function updateUI() {
+    player1El.textContent = isPvP ? '玩家1' : '你';
+    player2El.textContent = isPvP ? '玩家2' : '电脑';
+    turnDisplay.textContent = currentPlayer === 1 ? '🎯 轮到你' : '🤖 电脑思考中';
+}
+
+function getAngle(x1, y1, x2, y2) { return Math.atan2(y2 - y1, x2 - x1); }
+function distance(x1, y1, x2, y2) { return Math.hypot(x2 - x1, y2 - y1); }
+
+function getMousePos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width, scaleY = canvas.height / rect.height;
+    let clientX = e.clientX !== undefined ? e.clientX : e.touches[0].clientX;
+    let clientY = e.clientY !== undefined ? e.clientY : e.touches[0].clientY;
+    return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+}
+
+function handleClick(x, y) {
+    if (isAnimating || gameOver) return;
+    if (!isPvP && currentPlayer === 2) return;
+    if (distance(x, y, cueBall.x, cueBall.y) < 60 && !isAiming) {
+        isAiming = true; dragStart = {x: x, y: y}; powerBar.style.display = 'block';
+    }
+}
+
+function handleMove(x, y) {
+    if (isAiming && dragStart) {
+        let dx = dragStart.x - x, dy = dragStart.y - y;
+        let dist = Math.hypot(dx, dy);
+        power = Math.min(100, dist / 2); powerFill.style.width = power + '%';
+        let angle = getAngle(x, y, dragStart.x, dragStart.y);
+        ctx.clearRect(0, 0, W, H); draw();
+        ctx.setLineDash([5, 5]); ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(cueBall.x, cueBall.y);
+        ctx.lineTo(cueBall.x + Math.cos(angle) * 300, cueBall.y + Math.sin(angle) * 300);
+        ctx.stroke(); ctx.setLineDash([]);
+    }
+}
+
+function handleRelease() {
+    if (isAiming && dragStart) {
+        let dx = dragStart.x - cueBall.x, dy = dragStart.y - cueBall.y;
+        let dist = Math.hypot(dx, dy);
+        if (dist > 10) {
+            let angle = getAngle(cueBall.x, cueBall.y, dragStart.x, dragStart.y);
+            let speed = power * 0.3;
+            cueBall.vx = Math.cos(angle) * speed; cueBall.vy = Math.sin(angle) * speed;
+            isAnimating = true; isAiming = false;
+            powerBar.style.display = 'none'; power = 0;
+        } else { isAiming = false; powerBar.style.display = 'none'; }
+        dragStart = null;
+    }
+}
+
+function update() {
+    if (!isAnimating) return;
+    for (let b of balls) {
+        if (!b.alive) continue;
+        b.x += b.vx; b.y += b.vy;
+        b.vx *= FRICTION; b.vy *= FRICTION;
+        if (Math.abs(b.vx) < MIN_SPEED && Math.abs(b.vy) < MIN_SPEED) { b.vx = 0; b.vy = 0; }
+    }
+    for (let i = 0; i < balls.length; i++) {
+        for (let j = i + 1; j < balls.length; j++) {
+            let b1 = balls[i], b2 = balls[j];
+            if (!b1.alive || !b2.alive) continue;
+            let dist = distance(b1.x, b1.y, b2.x, b2.y);
+            if (dist < b1.r + b2.r && dist > 0) {
+                let angle = getAngle(b1.x, b1.y, b2.x, b2.y);
+                let overlap = (b1.r + b2.r - dist) / 2;
+                b1.x -= Math.cos(angle) * overlap; b1.y -= Math.sin(angle) * overlap;
+                b2.x += Math.cos(angle) * overlap; b2.y += Math.sin(angle) * overlap;
+                let speed1 = Math.hypot(b1.vx, b1.vy), speed2 = Math.hypot(b2.vx, b2.vy);
+                let dir1 = Math.atan2(b1.vy, b1.vx), dir2 = Math.atan2(b2.vy, b2.vx);
+                b1.vx = speed2 * Math.cos(dir2 - angle) * Math.cos(angle) + speed1 * Math.sin(dir1 - angle) * Math.cos(angle + Math.PI/2);
+                b1.vy = speed2 * Math.cos(dir2 - angle) * Math.sin(angle) + speed1 * Math.sin(dir1 - angle) * Math.sin(angle + Math.PI/2);
+                b2.vx = speed1 * Math.cos(dir1 - angle) * Math.cos(angle) + speed2 * Math.sin(dir2 - angle) * Math.cos(angle + Math.PI/2);
+                b2.vy = speed1 * Math.cos(dir1 - angle) * Math.sin(angle) + speed2 * Math.sin(dir2 - angle) * Math.sin(angle + Math.PI/2);
+            }
+        }
+    }
+    for (let b of balls) {
+        if (!b.alive) continue;
+        if (b.x - b.r < CUSHION) { b.x = CUSHION + b.r; b.vx = -b.vx * 0.8; }
+        if (b.x + b.r > W - CUSHION) { b.x = W - CUSHION - b.r; b.vx = -b.vx * 0.8; }
+        if (b.y - b.r < CUSHION) { b.y = CUSHION + b.r; b.vy = -b.vy * 0.8; }
+        if (b.y + b.r > H - CUSHION) { b.y = H - CUSHION - b.r; b.vy = -b.vy * 0.8; }
+        for (let p of pockets) {
+            if (distance(b.x, b.y, p.x, p.y) < POCKET_R) {
+                if (b.isCue) { b.x = 120; b.y = H/2; b.vx = 0; b.vy = 0; }
+                else { b.alive = false; pottedOrder.push(b.number); if (b.number === 8) { gameOver = true; isAnimating = false; setTimeout(() => alert('🎉 黑8入袋！'), 200); } }
+            }
+        }
+    }
+    let moving = balls.some(b => b.alive && (Math.abs(b.vx) > MIN_SPEED || Math.abs(b.vy) > MIN_SPEED));
+    if (!moving) {
+        isAnimating = false;
+        if (!gameOver) {
+            currentPlayer = currentPlayer === 1 ? 2 : 1; updateUI();
+            if (!isPvP && currentPlayer === 2 && !gameOver) setTimeout(aiMove, 600);
+        }
+    }
+}
+
+function aiMove() {
+    if (gameOver || isAnimating) return;
+    let target = null, minDist = Infinity;
+    for (let b of balls) {
+        if (!b.alive || b.isCue) continue;
+        let dist = distance(cueBall.x, cueBall.y, b.x, b.y);
+        if (dist < minDist) { minDist = dist; target = b; }
+    }
+    if (target) {
+        let angle = getAngle(cueBall.x, cueBall.y, target.x, target.y) + (Math.random() - 0.5) * 0.1;
+        let speed = 12 + Math.random() * 4;
+        cueBall.vx = Math.cos(angle) * speed; cueBall.vy = Math.sin(angle) * speed;
+        isAnimating = true;
+    }
+}
+
+function draw() {
+    ctx.clearRect(0, 0, W, H);
+    let grd = ctx.createRadialGradient(W/2, H/2, 50, W/2, H/2, 400);
+    grd.addColorStop(0, '#2a4a2a'); grd.addColorStop(1, '#1a2a1a');
+    ctx.fillStyle = grd; ctx.fillRect(0, 0, W, H);
+    for (let p of pockets) {
+        ctx.beginPath(); ctx.arc(p.x, p.y, POCKET_R, 0, 2*Math.PI);
+        ctx.fillStyle = '#111'; ctx.fill(); ctx.strokeStyle = '#333'; ctx.lineWidth = 2; ctx.stroke();
+    }
+    for (let b of balls) {
+        if (!b.alive) continue;
+        ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 2*Math.PI);
+        if (b.isCue) {
+            // 【核心修复】单独给白球画发光的白圈
+            ctx.shadowBlur = 40; ctx.shadowColor = '#ffffff';
+            ctx.fillStyle = '#ffffff'; ctx.fill();
+            ctx.shadowBlur = 0;
+        } else {
+            ctx.fillStyle = b.color;
+            ctx.shadowBlur = 15; ctx.shadowColor = b.color; ctx.fill(); ctx.shadowBlur = 0;
+            if (b.number > 0) {
+                ctx.fillStyle = '#fff'; ctx.font = '11px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText(b.number === 8 ? '8' : b.number, b.x, b.y);
+            }
+        }
+    }
+}
+
+canvas.addEventListener('touchstart', e => { e.preventDefault(); const pos = getMousePos(e); handleClick(pos.x, pos.y); });
+canvas.addEventListener('touchmove', e => { e.preventDefault(); const pos = getMousePos(e); handleMove(pos.x, pos.y); });
+canvas.addEventListener('touchend', e => { e.preventDefault(); handleRelease(); });
+canvas.addEventListener('mousedown', e => { const pos = getMousePos(e); handleClick(pos.x, pos.y); });
+canvas.addEventListener('mousemove', e => { const pos = getMousePos(e); handleMove(pos.x, pos.y); });
+canvas.addEventListener('mouseup', e => { handleRelease(); });
+
+document.getElementById('btnPvP').addEventListener('click', () => { isPvP = true; document.querySelectorAll('#controls button').forEach(b => b.classList.remove('active')); document.getElementById('btnPvP').classList.add('active'); resetGame(); });
+document.getElementById('btnPvE').addEventListener('click', () => { isPvP = false; document.querySelectorAll('#controls button').forEach(b => b.classList.remove('active')); document.getElementById('btnPvE').classList.add('active'); resetGame(); });
+document.getElementById('btnReset').addEventListener('click', resetGame);
+
+initPockets(); initBalls(); updateUI();
+function loop() { update(); draw(); requestAnimationFrame(loop); }
+loop();
+</script>
+</body>
+</html>

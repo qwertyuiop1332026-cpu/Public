@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>井字棋</title>
+<style>
+body{text-align:center;font-family:sans-serif;background:#2d3436;color:white;padding:10px;touch-action:manipulation;}
+.grid{display:grid;grid-template-columns:repeat(3, 80px);gap:10px;justify-content:center;margin:20px auto;}
+.cell{width:80px;height:80px;background:#636e72;font-size:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:8px;}
+.cell:active{background:#b2bec3;}
+#status{font-size:24px;margin:15px;}
+button{padding:10px 20px;font-size:18px;background:#e17055;color:white;border:none;border-radius:8px;cursor:pointer;}
+</style>
+</head>
+<body>
+<h1>❌ 井字棋 ⭕</h1>
+<div id="status">轮到 X</div>
+<div class="grid">
+    <div class="cell" onclick="makeMove(0)"></div>
+    <div class="cell" onclick="makeMove(1)"></div>
+    <div class="cell" onclick="makeMove(2)"></div>
+    <div class="cell" onclick="makeMove(3)"></div>
+    <div class="cell" onclick="makeMove(4)"></div>
+    <div class="cell" onclick="makeMove(5)"></div>
+    <div class="cell" onclick="makeMove(6)"></div>
+    <div class="cell" onclick="makeMove(7)"></div>
+    <div class="cell" onclick="makeMove(8)"></div>
+</div>
+<button onclick="resetTicTac()">重新开始</button>
+<script>
+let board=['','','','','','','','',''], currentPlayer='X', gameActive=true;
+function makeMove(index){
+ if(!gameActive||board[index]!=='') return;
+ board[index]=currentPlayer; document.getElementsByClassName('cell')[index].textContent=currentPlayer;
+ checkWinner(); currentPlayer=currentPlayer==='X'?'O':'X';
+ if(gameActive) document.getElementById('status').textContent=`轮到 ${currentPlayer}`;
+}
+function checkWinner(){
+ const winPatterns=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+ for(let p of winPatterns){
+   const [a,b,c]=p;
+   if(board[a]&&board[a]===board[b]&&board[a]===board[c]){
+     document.getElementById('status').textContent=`🎉 ${board[a]} 赢了！`; gameActive=false; return;
+   }
+ }
+ if(board.every(cell=>cell!=='')){document.getElementById('status').textContent='🤝 平局！'; gameActive=false;}
+}
+function resetTicTac(){board=['','','','','','','','','']; currentPlayer='X'; gameActive=true; document.getElementById('status').textContent='轮到 X'; document.querySelectorAll('.cell').forEach(c=>c.textContent='');}
+</script>
+</body>
+</html>

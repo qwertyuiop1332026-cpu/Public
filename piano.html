@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>别踩白块</title>
+<style>
+body{margin:0;overflow:hidden;background:#222;touch-action:manipulation;font-family:sans-serif;}
+canvas{display:block;width:100vw;height:100vh;background:#fff;}
+#score{position:absolute;top:20px;right:20px;color:#fff;font-size:24px;font-weight:bold;text-shadow:0 2px 4px rgba(0,0,0,0.5);}
+#gameOver{display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.85);color:#fff;padding:30px;border-radius:15px;text-align:center;}
+#gameOver button{padding:10px 20px;background:#4CAF50;color:#fff;border:none;border-radius:5px;font-size:16px;margin-top:15px;cursor:pointer;}
+</style>
+</head>
+<body>
+<div id="score">0</div>
+<div id="gameOver"><h1 style="color:#e94560;">💀 游戏结束</h1><p>得分: <span id="finalScore">0</span></p><button onclick="location.reload()">重新开始</button></div>
+<canvas id="c"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const scoreEl = document.getElementById('score');
+const finalScoreEl = document.getElementById('finalScore');
+const gameOverEl = document.getElementById('gameOver');
+
+let W, H;
+function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+resize(); window.addEventListener('resize', resize);
+
+const cols = 4;
+const tileHeight = W / cols * 0.9;
+let tiles = [];
+let score = 0, speed = 5, gameRunning = true;
+
+class Tile {
+    constructor(col) {
+        this.col = col;
+        this.y = -tileHeight;
+        this.x = col * (W / cols);
+        this.w = W / cols;
+        this.h = tileHeight;
+        this.isBlack = false;
+    }
+    update() { this.y += speed; }
+    draw() {
+        if(this.isBlack) {
+            ctx.fillStyle = '#222';
+            ctx.fillRect(this.x, this.y, this.w, this.h);
+        }
+    }
+}
+
+function spawnRow() {
+    let blackCol = Math.floor(Math.random() * cols);
+    for(let i=0; i<cols; i++) {
+        let t = new Tile(i);
+        if(i === blackCol) t.isBlack = true;
+        tiles.push(t);
+    }
+}
+
+function handleInput(x, y) {
+    if(!gameRunning) return;
+    for(let i = tiles.length - 1; i >= 0; i--) {
+        let t = tiles[i];
+        if(y >= t.y && y <= t.y + t.h && x >= t.x && x <= t.x + t.w) {
+            if(t.isBlack) {
+                t.isBlack = false; score++; scoreEl.textContent = score;
+                if(score % 5 === 0 && speed < 12) speed += 0.5;
+                return;
+            } else {
+                gameOver();
+                return;
+            }
+        }
+    }
+}
+
+function gameOver() {
+    gameRunning = false; finalScoreEl.textContent = score; gameOverEl.style.display = 'block';
+}
+
+canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault(); let touch = e.touches[0]; handleInput(touch.clientX, touch.clientY);
+}, {passive: false});
+canvas.addEventListener('click', (e) => handleInput(e.clientX, e.clientY));
+
+function loop() {
+    if(!gameRunning) return;
+    ctx.clearRect(0, 0, W, H);
+    ctx.strokeStyle = '#ddd'; ctx.lineWidth = 2;
+    for(let i=1; i<cols; i++) { ctx.beginPath(); ctx.moveTo(i * W / cols, 0); ctx.lineTo(i * W / cols, H); ctx.stroke(); }
+    for(let i = tiles.length - 1; i >= 0; i--) {
+        tiles[i].update(); tiles[i].draw();
+        if(tiles[i].y > H) tiles.splice(i, 1);
+    }
+    if(tiles.length === 0 || tiles[tiles.length-1].y > 0) spawnRow();
+    requestAnimationFrame(loop);
+}
+spawnRow(); loop();
+</script>
+</body>
+</html>

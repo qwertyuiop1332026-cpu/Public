@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>关于开发者</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #1a1a2e;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .card {
+            background: #16213e;
+            width: 100%;
+            max-width: 400px;
+            padding: 30px 20px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid #2d2d3d;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #4CAF50, #f5c842, #e94560);
+        }
+
+        .avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: #2d2d3d;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            border: 3px solid #4CAF50;
+        }
+
+        .name { font-size: 24px; font-weight: bold; color: #f5c842; margin-bottom: 5px; }
+        .title { font-size: 14px; color: #aaa; margin-bottom: 20px; }
+
+        .desc {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #ddd;
+            margin-bottom: 25px;
+            text-align: left;
+            background: #1a1a2e;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 3px solid #e94560;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            background: #1a1a2e;
+            border-radius: 12px;
+            padding: 15px 10px;
+            margin-bottom: 25px;
+        }
+        .stat-item { text-align: center; }
+        .stat-num { font-size: 20px; font-weight: bold; color: #4CAF50; }
+        .stat-label { font-size: 12px; color: #888; margin-top: 2px; }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 12px;
+            transition: all 0.3s;
+            box-sizing: border-box;
+            cursor: pointer;
+        }
+        .btn:active { transform: scale(0.96); }
+
+        .btn-primary { background: #4CAF50; color: #fff; }
+        .btn-secondary { background: #e94560; color: #fff; }
+        .btn-outline { background: transparent; color: #f5c842; border: 2px solid #f5c842; }
+        .footer { font-size: 12px; color: #555; margin-top: 10px; }
+        
+        /* 添加一个提示弹窗样式 */
+        .toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 8px;
+            padding: 16px;
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .toast.show {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <div class="avatar"><img src="avatar.png" style="width:100%; height:100%; border-radius:50%; object-fit:cover;"></div>
+
+        <div class="name">黯れ · 蚊岩文out</div>
+        <div class="title">独立游戏开发者 · 资源分享者</div>
+
+        <div class="desc">
+            📢 黯机游戏大全已上线！<br>
+            目前已收录 10+ 款经典小游戏，包含推箱子、扫雷、五子棋等。<br>
+            我是黯机游戏大全的作者，欢迎体验并提出宝贵意见！
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-num">10+</div>
+                <div class="stat-label">游戏数量</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num">100%</div>
+                <div class="stat-label">免费畅玩</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num">1</div>
+                <div class="stat-label">持续更新</div>
+            </div>
+        </div>
+
+        <a href="index.html" class="btn btn-primary">🎮 进入游戏大厅</a>
+        
+        <!-- 重点修改：这里变成了点击复制QQ号 -->
+        <div class="btn btn-outline" onclick="copyQQ()">💬 复制作者QQ号</div>
+
+        <div class="footer">版本 v2.0 ·  黯れNB🎅 </div>
+    </div>
+
+    <!-- 复制成功的提示框 -->
+    <div id="myToast" class="toast">✅ 作者QQ号已复制，快去加好友吧！</div>
+
+    <script>
+        function copyQQ() {
+            // 将你的QQ号存到剪贴板
+            navigator.clipboard.writeText("3881806668").then(() => {
+                // 显示提示框
+                var toast = document.getElementById("myToast");
+                toast.className = "toast show";
+                // 3秒后自动消失
+                setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
+            });
+        }
+    </script>
+
+</body>
+</html>

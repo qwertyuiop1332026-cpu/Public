@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>窄路狂飙 · 正常密度</title>
+<style>
+    body {
+        margin: 0; background: #0d0d1a;
+        display: flex; justify-content: center; align-items: center;
+        height: 100vh; touch-action: manipulation;
+        overflow: hidden; flex-direction: column;
+    }
+    #game-container {
+        width: 100%; max-width: 500px;
+        display: flex; flex-direction: column; align-items: center;
+        padding: 10px;
+        position: relative;
+    }
+    canvas {
+        background: #1a1a2e; border: 2px solid #4a4a5a;
+        width: 100%; aspect-ratio: 9 / 16;
+        border-radius: 8px; box-shadow: 0 0 30px rgba(0,0,0,0.5);
+    }
+    #ui {
+        color: #f5c842; font-size: 20px; font-weight: bold;
+        margin-bottom: 10px; text-align: center; width: 100%;
+    }
+    #keys-hint {
+        margin-top: 10px; color: #aaa; font-size: 14px;
+        text-align: center; width: 100%;
+    }
+
+    #mobile-controls {
+        display: none;
+        margin-top: 15px;
+        gap: 25px;
+        justify-content: center;
+        width: 100%;
+    }
+    #mobile-controls button {
+        background: #2a2a5e; color: #fff; border: none;
+        border-radius: 16px; font-size: 32px; font-weight: bold;
+        padding: 15px 40px; cursor: pointer;
+        touch-action: manipulation; box-shadow: 0 4px 0 #15153e;
+        transition: 0.1s;
+    }
+    #mobile-controls button:active {
+        transform: translateY(4px); box-shadow: none;
+    }
+
+    #mode-selector {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(13, 13, 26, 0.95);
+        backdrop-filter: blur(8px);
+        display: flex; flex-direction: column;
+        justify-content: center; align-items: center;
+        z-index: 20;
+        border-radius: 8px;
+    }
+    #mode-selector h2 {
+        color: #f5c842; font-size: 22px;
+        margin-bottom: 20px; text-align: center;
+    }
+    #mode-selector .sub {
+        color: #aaa; font-size: 14px;
+        margin-bottom: 25px; text-align: center;
+    }
+    .selector-buttons {
+        display: flex; gap: 20px;
+    }
+    .selector-btn {
+        background: #2a2a5e; color: #fff; border: 2px solid #4a4a5a;
+        border-radius: 16px; padding: 15px 30px;
+        font-size: 18px; font-weight: bold; cursor: pointer;
+        transition: 0.2s; touch-action: manipulation;
+    }
+    .selector-btn:active { transform: scale(0.95); }
+    .selector-btn.pc { background: #2a2a5e; }
+    .selector-btn.mobile { background: #4a4a5e; }
+    .selector-btn:hover { border-color: #f5c842; }
+</style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="ui">🏁 得分: <span id="score">0</span></div>
+    <canvas id="c"></canvas>
+    
+    <div id="keys-hint">⬅ ➡ 方向键切换车道</div>
+    
+    <div id="mobile-controls">
+        <button id="btnLeft">◀</button>
+        <button id="btnRight">▶</button>
+    </div>
+
+    <div id="mode-selector">
+        <h2>🎮 选择游玩设备</h2>
+        <div class="sub">请选择你正在使用的操作方式</div>
+        <div class="selector-buttons">
+            <button class="selector-btn pc" id="pcMode">💻 电脑键盘</button>
+            <button class="selector-btn mobile" id="mobileMode">📱 手机触屏</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const c = document.getElementById('c');
+const ctx = c.getContext('2d');
+const scoreEl = document.getElementById('score');
+const keysHint = document.getElementById('keys-hint');
+const mobileControls = document.getElementById('mobile-controls');
+const btnLeft = document.getElementById('btnLeft');
+const btnRight = document.getElementById('btnRight');
+const modeSelector = document.getElementById('mode-selector');
+
+const W = 270, H = 480;
+c.width = W; c.height = H;
+
+const LANE_W = W / 3;
+const CAR_W = LANE_W - 4;
+const CAR_H = 60;
+
+let player = { lane: 1, x: 0, y: H - 100, w: CAR_W, h: CAR_H };
+let enemies = [];
+let score = 0, gameOver = false;
+let isPaused = false;
+
+function init() {
+    player.lane = 1;
+    player.x = player.lane * LANE_W + (LANE_W - CAR_W) / 2;
+    player.y = H - 100;
+    enemies = []; score = 0; gameOver = false; isPaused = false;
+    scoreEl.textContent = '0';
+}
+
+function spawnEnemy() {
+    let lane = Math.floor(Math.random() * 3);
+    let x = lane * LANE_W + (LANE_W - CAR_W) / 2;
+    
+    for (let e of enemies) {
+        if (Math.abs(e.x - x) < CAR_W - 2 && e.y < 150) { return; }
+        if (Math.abs(e.y - player.y) < CAR_H * 1.5) {
+            let existingLane = Math.floor(e.x / LANE_W);
+            if (Math.abs(existingLane - lane) <= 1) {
+                return;
+            }
+        }
+    }
+    enemies.push({ x: x, y: -CAR_H, w: CAR_W, h: CAR_H });
+}
+
+function update() {
+    if (gameOver || isPaused) return;
+    if (Math.random() < 0.045) spawnEnemy();
+    for (let i = enemies.length - 1; i >= 0; i--) {
+        enemies[i].y += 13;
+        if (enemies[i].y > H) { enemies.splice(i, 1); score++; scoreEl.textContent = score; }
+    }
+    for (let e of enemies) {
+        if (player.x < e.x + e.w && player.x + player.w > e.x &&
+            player.y < e.y + e.h && player.y + player.h > e.y) {
+            gameOver = true;
+            setTimeout(() => { alert('💥 撞车了！得分：' + score); init(); }, 100);
+            return;
+        }
+    }
+}
+
+function draw() {
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#2d2d3d'; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = '#555'; ctx.lineWidth = 2; ctx.setLineDash([15, 15]);
+    for (let i = 1; i < 3; i++) {
+        ctx.beginPath(); ctx.moveTo(i * LANE_W, 0); ctx.lineTo(i * LANE_W, H); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    for (let e of enemies) {
+        ctx.fillStyle = '#e94560'; ctx.fillRect(e.x, e.y, e.w, e.h);
+        ctx.fillStyle = '#c0392b'; ctx.fillRect(e.x + 4, e.y + 4, e.w - 8, 8);
+    }
+    ctx.fillStyle = '#4CAF50'; ctx.shadowBlur = 15; ctx.shadowColor = '#4CAF50';
+    ctx.fillRect(player.x, player.y, player.w, player.h);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#2e7d32'; ctx.fillRect(player.x + 4, player.y + 4, player.w - 8, 8);
+}
+
+document.getElementById('pcMode').addEventListener('click', function() {
+    modeSelector.style.display = 'none';
+    keysHint.textContent = '⬅ ➡ 方向键切换车道';
+    mobileControls.style.display = 'none';
+    init();
+    startLoop();
+});
+
+document.getElementById('mobileMode').addEventListener('click', function() {
+    modeSelector.style.display = 'none';
+    keysHint.textContent = '点击下方按钮切换车道';
+    mobileControls.style.display = 'flex';
+    init();
+    startLoop();
+});
+
+document.addEventListener('keydown', e => {
+    if (modeSelector.style.display !== 'none') return;
+    if (e.key === ' ') {
+        e.preventDefault();
+        if (!gameOver) isPaused = !isPaused;
+        return;
+    }
+    if (gameOver || isPaused) return;
+    if (e.key === 'ArrowLeft' && player.lane > 0) {
+        player.lane--; player.x = player.lane * LANE_W + (LANE_W - CAR_W) / 2;
+    }
+    if (e.key === 'ArrowRight' && player.lane < 2) {
+        player.lane++; player.x = player.lane * LANE_W + (LANE_W - CAR_W) / 2;
+    }
+});
+
+btnLeft.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if (modeSelector.style.display !== 'none') return;
+    if (!gameOver && !isPaused && player.lane > 0) {
+        player.lane--; player.x = player.lane * LANE_W + (LANE_W - CAR_W) / 2;
+    }
+});
+btnRight.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if (modeSelector.style.display !== 'none') return;
+    if (!gameOver && !isPaused && player.lane < 2) {
+        player.lane++; player.x = player.lane * LANE_W + (LANE_W - CAR_W) / 2;
+    }
+});
+
+btnLeft.addEventListener('click', e => e.preventDefault());
+btnRight.addEventListener('click', e => e.preventDefault());
+
+modeSelector.style.display = 'flex';
+let gameLoop = null;
+
+function startLoop() {
+    if (gameLoop) clearInterval(gameLoop);
+    gameLoop = setInterval(() => { update(); draw(); }, 40);
+}
+</script>
+</body>
+</html>

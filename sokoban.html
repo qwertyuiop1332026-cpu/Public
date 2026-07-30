@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>数字华容道</title>
+<style>
+    body {
+        margin: 0; background: #0d0d1a;
+        display: flex; justify-content: center; align-items: center;
+        min-height: 100vh; font-family: sans-serif; touch-action: manipulation;
+        overflow-y: auto; padding: 20px;
+    }
+    #game {
+        background: #1a1a2e; border-radius: 16px; padding: 20px 20px 10px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        text-align: center;
+        width: 100%; max-width: 360px;
+        position: relative;
+    }
+    .grid {
+        display: grid; grid-template-columns: repeat(4, 1fr);
+        gap: 6px; margin: 15px auto;
+        aspect-ratio: 1 / 1;
+        background: #2d2d3d; padding: 6px; border-radius: 8px;
+    }
+    .tile {
+        background: #4CAF50; color: #fff;
+        display: flex; justify-content: center; align-items: center;
+        font-size: 28px; font-weight: bold; border-radius: 6px;
+        cursor: pointer; user-select: none; transition: 0.15s;
+        box-shadow: 0 3px 0 #2e7d32;
+    }
+    .tile:active { transform: scale(0.95); }
+    .tile.empty { background: transparent; box-shadow: none; cursor: default; }
+    #ui {
+        display: flex; justify-content: space-between; color: #f5c842; font-size: 16px; font-weight: bold;
+        margin-bottom: 5px;
+    }
+    #reset {
+        background: #e94560; border: none; padding: 8px 20px; border-radius: 20px; color: #fff; font-size: 14px; font-weight: bold; cursor: pointer;
+    }
+    .instructions {
+        background: #2d2d3d; border-radius: 8px; padding: 12px 14px;
+        margin-top: 15px; text-align: left; color: #ccc;
+        font-size: 13px; line-height: 1.6; border: 1px solid #3d3d4d;
+    }
+    .instructions strong { color: #f5c842; }
+    .instructions .step { color: #4CAF50; font-weight: bold; }
+
+    /* 弹窗样式 */
+    #popup-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.6);
+        justify-content: center; align-items: center;
+        z-index: 999;
+    }
+    #popup-overlay.active { display: flex; }
+    .popup-box {
+        background: #2d2d3d; border: 1px solid #e94560;
+        border-radius: 16px; padding: 25px 30px;
+        text-align: center; max-width: 280px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        color: #fff;
+    }
+    .popup-box .icon { font-size: 40px; margin-bottom: 10px; }
+    .popup-box .msg { font-size: 16px; line-height: 1.5; color: #ccc; }
+    .popup-box .msg strong { color: #f5c842; }
+    .popup-box .btn-ok {
+        margin-top: 15px; padding: 8px 25px;
+        background: #4CAF50; border: none; border-radius: 20px;
+        color: #fff; font-size: 14px; font-weight: bold; cursor: pointer;
+    }
+</style>
+</head>
+<body>
+
+<div id="game">
+    <div id="ui">
+        <div>⏱️ <span id="moves">0</span>步</div>
+        <button id="reset">重新洗牌</button>
+    </div>
+    <div class="grid" id="grid"></div>
+
+    <div class="instructions">
+        <strong>🎯 目标：</strong> 将数字按 1~15 顺序排好，空格在右下角。<br>
+        <span class="step">🖱️ 操作：</span> 用手机点击 <strong>空格旁边</strong> 的数字方块，它会滑进空格。<br>
+        <span class="step">💡 技巧：</span> 先拼 1~4 第一行，再拼 5~8 第二行。
+    </div>
+
+    <!-- 提示弹窗 -->
+    <div id="popup-overlay" class="popup-overlay" onclick="closePopup()">
+        <div class="popup-box" onclick="event.stopPropagation()">
+            <div class="icon">⚠️</div>
+            <div class="msg">这个方块四周没有空格，<strong>所以别戳了😡</strong></div>
+            <button class="btn-ok" onclick="closePopup()">知道了</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const SIZE = 4;
+let board = [];
+let emptyPos = { row: 3, col: 3 };
+let moves = 0;
+const gridEl = document.getElementById('grid');
+const movesEl = document.getElementById('moves');
+const popup = document.getElementById('popup-overlay');
+
+function init() {
+    let nums = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0];
+    do {
+        for (let i = nums.length - 1; i > 0; i--) {
+            let j = Math.floor(Math.random() * (i + 1));
+            [nums[i], nums[j]] = [nums[j], nums[i]];
+        }
+    } while (!isSolvable(nums));
+    
+    board = [];
+    let idx = 0;
+    for (let r = 0; r < SIZE; r++) {
+        let row = [];
+        for (let c = 0; c < SIZE; c++) {
+            row.push(nums[idx++]);
+            if (row[c] === 0) { emptyPos = { row: r, col: c }; }
+        }
+        board.push(row);
+    }
+    moves = 0; movesEl.textContent = '0';
+    render();
+}
+
+function isSolvable(nums) {
+    let inversions = 0;
+    for (let i = 0; i < nums.length - 1; i++) {
+        for (let j = i + 1; j < nums.length; j++) {
+            if (nums[i] && nums[j] && nums[i] > nums[j]) inversions++;
+        }
+    }
+    let rowFromBottom = 4 - Math.floor(nums.indexOf(0) / 4);
+    return (inversions % 2 === 0 && rowFromBottom % 2 === 1) ||
+           (inversions % 2 === 1 && rowFromBottom % 2 === 0);
+}
+
+function render() {
+    gridEl.innerHTML = '';
+    for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+            let tile = document.createElement('div');
+            tile.className = 'tile';
+            let val = board[r][c];
+            if (val === 0) tile.classList.add('empty');
+            else tile.textContent = val;
+            tile.addEventListener('click', () => moveTile(r, c));
+            gridEl.appendChild(tile);
+        }
+    }
+}
+
+function moveTile(row, col) {
+    let dr = Math.abs(row - emptyPos.row);
+    let dc = Math.abs(col - emptyPos.col);
+    if ((dr === 1 && dc === 0) || (dr === 0 && dc === 1)) {
+        board[emptyPos.row][emptyPos.col] = board[row][col];
+        board[row][col] = 0;
+        emptyPos = { row, col };
+        moves++; movesEl.textContent = moves;
+        render();
+        checkWin();
+    } else {
+        showPopup();
+    }
+}
+
+function checkWin() {
+    let win = true;
+    let val = 1;
+    for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+            if (r === SIZE - 1 && c === SIZE - 1) break;
+            if (board[r][c] !== val++) { win = false; break; }
+        }
+        if (!win) break;
+    }
+    if (win) setTimeout(() => alert("🎉 恭喜你拼好了！"), 200);
+}
+
+function showPopup() {
+    popup.classList.add('active');
+}
+
+function closePopup() {
+    popup.classList.remove('active');
+}
+
+document.getElementById('reset').addEventListener('click', init);
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>黯机手机</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        background: #000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        touch-action: manipulation;
+    }
+
+    .phone-wrapper {
+        position: relative;
+        width: 370px;
+        height: 750px;
+        background: #1c1c1e;
+        border-radius: 45px;
+        padding: 12px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.9), inset 0 0 0 2px #333;
+    }
+
+    .phone-screen {
+        width: 100%;
+        height: 100%;
+        background: #1a1a2e;
+        border-radius: 35px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .status-bar {
+        height: 50px;
+        background: #1a1a2e;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 25px;
+        color: #fff;
+        font-size: 14px;
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+    #clock {
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    .status-icons {
+        font-size: 16px;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+    }
+
+    .screen-content {
+        flex: 1;
+        background: radial-gradient(circle at center, #2a2a4e, #0d0d1a);
+        padding: 20px 20px 10px;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+    }
+    .screen-content::-webkit-scrollbar { display: none; }
+
+    .desktop-title {
+        color: #fff;
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 20px;
+        letter-spacing: 1px;
+    }
+
+    .app-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px 10px;
+        margin-bottom: 20px;
+    }
+
+    .app-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-decoration: none;
+        color: #fff;
+        transition: 0.1s;
+    }
+    .app-item:active { transform: scale(0.88); }
+    .app-icon-box {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(145deg, #2a2a5e, #1a1a3e);
+        border-radius: 14px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 30px;
+        border: 1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        margin-bottom: 6px;
+    }
+    .app-name {
+        font-size: 12px;
+        color: #ccc;
+        text-align: center;
+    }
+
+    .dock-bar {
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 10px 5px;
+        margin-top: auto;
+        display: flex;
+        justify-content: space-around;
+        border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .home-indicator {
+        height: 25px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .home-indicator .bar {
+        width: 140px;
+        height: 4px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 100px;
+    }
+</style>
+</head>
+<body>
+
+<div class="phone-wrapper">
+    <div class="phone-screen">
+        <div class="status-bar">
+            <span id="clock">00:00</span>
+            <span class="status-icons">📶 5G 🔋</span>
+        </div>
+
+        <div class="screen-content">
+            <div class="desktop-title">黯机手机</div>
+
+            <div class="app-grid">
+                <a href="index.html" class="app-item">
+                    <div class="app-icon-box">🎮</div>
+                    <span class="app-name">游戏大厅</span>
+                </a>
+                <a href="ab_group.html" class="app-item">
+                    <div class="app-icon-box">🗨️</div>
+                    <span class="app-name">QQ群聊</span>
+                </a>
+                <a href="https://www.baidu.com" target="_blank" class="app-item">
+                    <div class="app-icon-box">🌐</div>
+                    <span class="app-name">浏览器</span>
+                </a>
+                <a href="about.html" class="app-item">
+                    <div class="app-icon-box">👤</div>
+                    <span class="app-name">关于</span>
+                </a>
+                
+                <!-- 联系按钮：点击复制QQ号 -->
+                <div class="app-item" onclick="copyQQ()">
+                    <div class="app-icon-box">📞</div>
+                    <span class="app-name">联系</span>
+                </div>
+
+                <div class="app-item" onclick="alert('📱 这是模拟手机网页，别点了')">
+                    <div class="app-icon-box">⚙️</div>
+                    <span class="app-name">设置</span>
+                </div>
+            </div>
+
+            <div class="dock-bar">
+                <a href="index.html" class="app-item" style="flex:1;">
+                    <div class="app-icon-box" style="width:50px; height:50px; font-size:24px;">🏠</div>
+                </a>
+                <a href="https://www.baidu.com" target="_blank" class="app-item" style="flex:1;">
+                    <div class="app-icon-box" style="width:50px; height:50px; font-size:24px;">🔍</div>
+                </a>
+                <div class="app-item" style="flex:1;" onclick="history.back()">
+                    <div class="app-icon-box" style="width:50px; height:50px; font-size:24px;">↩️</div>
+                </div>
+            </div>
+
+            <div class="home-indicator"><div class="bar"></div></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function updateClock() {
+        const now = new Date();
+        let hours = now.getHours();
+        let minutes = now.getMinutes();
+        hours = hours.toString().padStart(2, '0');
+        minutes = minutes.toString().padStart(2, '0');
+        document.getElementById('clock').textContent = hours + ':' + minutes;
+    }
+    updateClock();
+    setInterval(updateClock, 30000);
+
+    // 复制QQ号功能
+    function copyQQ() {
+        const qq = "3881806668";
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(qq).then(() => {
+                alert('✅ QQ号已复制到剪贴板：' + qq + '\n请打开QQ搜索添加好友。');
+            }).catch(() => {
+                fallbackCopy(qq);
+            });
+        } else {
+            fallbackCopy(qq);
+        }
+    }
+
+    // 兼容旧浏览器的备用复制方法
+    function fallbackCopy(text) {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+            document.execCommand('copy');
+            alert('✅ QQ号已复制到剪贴板：' + text + '\n请打开QQ搜索添加好友。');
+        } catch (err) {
+            alert('❌ 复制失败，请手动复制QQ号：' + text);
+        }
+        document.body.removeChild(textarea);
+    }
+</script>
+
+</body>
+</html>
