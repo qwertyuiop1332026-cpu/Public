@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<script>
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+    });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j')) || (e.ctrlKey && e.key === 'u')) {
+            e.preventDefault();
+            return false;
+        }
+    });
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>黯机游戏大全</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        background: #1a1a2e;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        color: #fff;
+        padding: 0 15px 20px;
+        overflow-x: hidden;
+    }
+    .top-nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 0;
+        border-bottom: 1px solid #2a2a3e;
+        margin-bottom: 20px;
+    }
+    .nav-title {
+        font-size: 20px;
+        font-weight: bold;
+        color: #f5c842;
+    }
+    .nav-buttons {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+    .nav-btn {
+        color: #aaa;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+        padding: 5px 0;
+        border-bottom: 2px solid transparent;
+        transition: 0.2s;
+        cursor: pointer;
+    }
+    .nav-btn.active {
+        color: #f5c842;
+        border-bottom: 2px solid #f5c842;
+    }
+    .page {
+        display: none;
+        animation: fadeIn 0.3s ease;
+    }
+    .page.active { display: block; }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .game-btn {
+        display: block;
+        margin: 10px auto;
+        padding: 14px;
+        width: 100%;
+        max-width: 400px;
+        background: #4CAF50;
+        color: white;
+        text-decoration: none;
+        border-radius: 12px;
+        font-size: 18px;
+        font-weight: bold;
+        text-align: center;
+        transition: 0.2s;
+    }
+    .game-btn:active {
+        transform: scale(0.96);
+        opacity: 0.8;
+    }
+    .log-item {
+        background: #2a2a3e;
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 12px;
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .log-item .date {
+        color: #f5c842;
+        font-size: 13px;
+        font-weight: bold;
+    }
+    .log-item .desc {
+        color: #ccc;
+        font-size: 15px;
+        margin-top: 5px;
+        line-height: 1.5;
+    }
+    .copyright {
+        text-align: center;
+        color: #666;
+        font-size: 12px;
+        margin-top: 30px;
+        border-top: 1px solid #2a2a3e;
+        padding-top: 20px;
+    }
+</style>
+</head>
+<body>
+
+    <div class="top-nav">
+        <div class="nav-title">黯机游戏大全</div>
+        <div class="nav-buttons">
+            <a href="javascript:void(0)" class="nav-btn active" onclick="switchPage('home')">主页</a>
+            <a href="javascript:void(0)" class="nav-btn" onclick="switchPage('logs')">更新日志</a>
+        </div>
+    </div>
+
+    <div id="home" class="page active">
+        <a href="guess.html" class="game-btn">🔢 猜数字</a>
+        <a href="snake.html" class="game-btn">🐍 贪吃蛇</a>
+        <a href="tictac.html" class="game-btn">❌ 井字棋</a>
+        <a href="minesweeper.html" class="game-btn">💣 扫雷</a>
+        <a href="breakout.html" class="game-btn">🧱 打砖块</a>
+        <a href="sokoban.html" class="game-btn">🚎 数字华容道</a>
+        <a href="piano.html" class="game-btn">🎹 别踩白块</a>
+        <a href="mastermind.html" class="game-btn">💣 拆弹专家</a>
+        <a href="neon_snake.html" class="game-btn">🐍 霓虹贪吃蛇</a>
+        <a href="shooter.html" class="game-btn">✈️ 像素飞机大战</a>
+        <a href="memory.html" class="game-btn">🎃 记忆翻牌</a>
+        <a href="math.html" class="game-btn">☃️ 数学大挑战</a>
+        <a href="star_match.html" class="game-btn">🧊 星穹三消</a>
+        <a href="goban.html" class="game-btn">🐂 AI智能五子棋对战</a>
+        <a href="whack.html" class="game-btn">👽 打地鼠</a>
+        <a href="tetris.html" class="game-btn">☠︎ 俄罗斯方块</a>
+        <a href="racer.html" class="game-btn">🐿️ 像素赛车</a>
+        <a href="phone2.html" class="game-btn">😋 模拟手机</a>
+        <a href="https://drifthunter.org/zh/games/subway-surfers" target="_blank" class="game-btn">🚇 地铁跑酷 (网页版)</a>
+        <a href="ab_group.html" class="game-btn">👾 加入QQ群</a>
+        <a href="about.html" class="game-btn">💀 关于开发者</a>
+    </div>
+
+    <div id="logs" class="page">
+        <div class="log-item">
+            <div class="date">2026年7月30日</div>
+            <div class="desc">🚀 迁移至 GitHub Pages，移除音乐播放器。</div>
+        </div>
+        <div class="log-item">
+            <div class="date">2026年7月22日</div>
+            <div class="desc">新增高仿“黯机手机”模拟器界面。</div>
+        </div>
+        <div class="log-item">
+            <div class="date">2026年7月13日</div>
+            <div class="desc">网站正式上线！首批游戏集结完毕。</div>
+        </div>
+    </div>
+
+    <div class="copyright">
+        &copy; 2026 黯机游戏大全 二改4m
+    </div>
+
+    <script>
+        function switchPage(pageId) {
+            document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            let btns = document.querySelectorAll('.nav-btn');
+            let map = {'home': 0, 'logs': 1};
+            if(map[pageId] !== undefined) btns[map[pageId]].classList.add('active');
+        }
+    </script>
+
+</body>
+</html>
